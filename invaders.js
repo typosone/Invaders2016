@@ -21,7 +21,9 @@ class Player {
         }
     }
     draw(ctx) {
-        // TODO: 移動関連を先にやる
+        // TODO: 弾発射関連をやること
+
+        this.move();
 
         ctx.save();
         ctx.translate(this.pos.x, this.pos.y);
@@ -82,6 +84,7 @@ class Input {
                 return;
         }
         event.preventDefault();
+        console.log(this);
     }
 }
 
@@ -92,13 +95,14 @@ window.addEventListener("DOMContentLoaded", function () {
     const WIDTH = canvas.width;
     const HEIGHT = canvas.height;
     const SPF = 1000 / 30;
+    const PLAYER_SPEED = 5;
 
     let input = new Input();
-    let player = new Player(input, WIDTH / 2, HEIGHT * 14 / 15);
+    let player = new Player(input, WIDTH / 2, HEIGHT * 14 / 15, PLAYER_SPEED);
 
     // キーボード入力イベントをInputクラスとバインド
-    document.addEventListener("keydown", input.onKeyDown);
-    document.addEventListener("keyup", input.onKeyUp);
+    document.addEventListener("keydown", (evt) => input.onKeyDown(evt));
+    document.addEventListener("keyup", (evt) => input.onKeyUp(evt));
 
     // メインループ
     let mainLoop = function () {
