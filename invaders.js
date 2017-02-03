@@ -4,11 +4,18 @@
  */
 
 class Player {
-    constructor(input, x, y, speed) {
+    /**
+     * @return {number}
+     */
+    static get HALF_WIDTH() {
+        return 20;
+    }
+    constructor(input, x, y, speed, canvas_width) {
         this.input = input;
         this.pos = {'x': x, 'y': y};
         this.bullet = null;
         this.speed = speed;
+        this.canvas_width = canvas_width;
     }
 
     move() {
@@ -19,11 +26,28 @@ class Player {
         } else if (this.input.isRight) {
             this.pos.x += this.speed;
         }
+        // 左側へ行き過ぎたら戻す
+        if (this.pos.x < Player.HALF_WIDTH) {
+            this.pos.x = Player.HALF_WIDTH;
+        }
+        // 右側へ行きすぎたら戻す
+        if (this.pos.x > this.canvas_width - Player.HALF_WIDTH) {
+            this.pos.x = this.canvas_width - Player.HALF_WIDTH;
+        }
+
     }
     draw(ctx) {
-        // TODO: 弾発射関連をやること
-
         this.move();
+
+        if (this.input.isSpace && this.bullet == null) {
+            this.bullet = new Bullet(this.pos.x, this.pos.y);
+        }
+        if (this.bullet != null) {
+            this.bullet.draw(ctx);
+            if (!this.bullet.isValid()) {
+                this.bullet = null;
+            }
+        }
 
         ctx.save();
         ctx.translate(this.pos.x, this.pos.y);
@@ -88,6 +112,54 @@ class Input {
     }
 }
 
+class Bullet {
+    /**
+     * @return {number}
+     */
+    static get SPEED() {
+        return 15;
+    }
+
+    /**
+     * @return {number}
+     */
+    static get HALF_HEIGHT() {
+        return 5;
+    }
+
+    constructor(x, y) {
+        this.pos = {'x': x, 'y': y};
+    }
+
+    move() {
+        this.pos.y -= Bullet.SPEED;
+    }
+
+    isValid() {
+        // TODO: 敵との衝突判定で衝突してたらfalseを返す
+        if (this.pos.y < -Bullet.HALF_HEIGHT) {
+            return false;
+        }
+        return true;
+    }
+
+    draw(ctx) {
+        this.move();
+
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+        ctx.strokeStyle = "#FFF";
+        ctx.lineWidth = 3;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -5);
+        ctx.lineTo(0, 5);
+        ctx.stroke();
+
+        ctx.restore();
+    }
+}
+
 window.addEventListener("DOMContentLoaded", function () {
     // 必要な定数、変数を設定しておく
     const canvas = document.getElementById("main");
@@ -98,7 +170,7 @@ window.addEventListener("DOMContentLoaded", function () {
     const PLAYER_SPEED = 5;
 
     let input = new Input();
-    let player = new Player(input, WIDTH / 2, HEIGHT * 14 / 15, PLAYER_SPEED);
+    let player = new Player(input, WIDTH / 2, HEIGHT * 14 / 15, PLAYER_SPEED, WIDTH);
 
     // キーボード入力イベントをInputクラスとバインド
     document.addEventListener("keydown", (evt) => input.onKeyDown(evt));
