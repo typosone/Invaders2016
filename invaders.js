@@ -19,6 +19,10 @@ class Player {
         this.canvas_width = canvas_width;
     }
 
+    getBullet() {
+        return this.bullet;
+    }
+
     move() {
         if (this.input.isLeft && this.input.isRight) {
             // なにもしない
@@ -130,8 +134,16 @@ class Bullet {
         return 5;
     }
 
+    /**
+     * @return {number}
+     */
+    static get HALF_WIDTH() {
+        return 1.5;
+    }
+
     constructor(x, y) {
         this.pos = {'x': x, 'y': y};
+        this.isCollied = false;
     }
 
     move() {
@@ -139,11 +151,14 @@ class Bullet {
     }
 
     isValid() {
-        // TODO: 敵との衝突判定で衝突してたらfalseを返す
-        if (this.pos.y < -Bullet.HALF_HEIGHT) {
+        if (this.isCollied){
             return false;
         }
-        return true;
+        return this.pos.y >= -Bullet.HALF_HEIGHT;
+    }
+
+    setInvalidate() {
+        this.isCollied = true;
     }
 
     draw(ctx) {
@@ -198,6 +213,18 @@ class Enemy {
 
         ctx.restore();
     }
+
+    isCollision(bullet) {
+        // まず横の判定の準備?
+        let dx = Math.abs(this.pos.x - bullet.pos.x);
+        let dw = Enemy.HALF_SIZE + Bullet.HALF_WIDTH;
+        // 縦の判定準備
+        let dy = Math.abs(this.pos.y - bullet.pos.y);
+        let dh = Enemy.HALF_SIZE + Bullet.HALF_HEIGHT;
+
+        // 判定
+        return (dx < dw && dy < dh);
+    }
 }
 
 class EnemyManager {
@@ -219,7 +246,23 @@ class EnemyManager {
     }
 
     draw(ctx) {
+        this.enemyList.forEach(
+            (enemy) => enemy.draw(ctx)
+        );
+    }
 
+    collision(bullet) {
+        if (bullet == null) {
+            return;
+        }
+        const length = this.enemyList.length;
+        for (let i = 0; i < length; i++) {
+            if (this.enemyList[i].isCollision(bullet)) {
+                this.enemyList.splice(i, 1);
+                bullet.setInvalidate();
+                return;
+            }
+        }
     }
 }
 
@@ -239,10 +282,9 @@ window.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("keydown", (evt) => input.onKeyDown(evt));
     document.addEventListener("keyup", (evt) => input.onKeyUp(evt));
 
-    // TODO: 以下の敵表示はデバッグ用なので消すこと
-    // let enemyImage = new Image();
-    // enemyImage.src = "type_a.png";
-    // let enemy = new Enemy(enemyImage, 300, 400);
+    // EnemyManagerの準備
+    let manager = new EnemyManager();
+    manager.generateEnemies();
 
     // メインループ
     let mainLoop = function () {
@@ -252,8 +294,11 @@ window.addEventListener("DOMContentLoaded", function () {
         // プレイヤーの描画
         player.draw(ctx);
 
-        // TODO: 以下の敵描画はデバッグ用なので消すこと
-        // enemy.draw(ctx);
+        // 敵の衝突判定
+        manager.collision(player.getBullet());
+
+        // 敵の描画
+        manager.draw(ctx);
 
         // 再度この関数を呼び出す予約をする
         setTimeout(mainLoop, SPF);
