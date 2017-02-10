@@ -10,6 +10,7 @@ class Player {
     static get HALF_WIDTH() {
         return 20;
     }
+
     constructor(input, x, y, speed, canvas_width) {
         this.input = input;
         this.pos = {'x': x, 'y': y};
@@ -36,6 +37,7 @@ class Player {
         }
 
     }
+
     draw(ctx) {
         this.move();
 
@@ -77,6 +79,7 @@ class Input {
         this.isRight = false;
         this.isSpace = false;
     }
+
     onKeyDown(event) {
         switch (event.code) {
             case "ArrowLeft":
@@ -93,6 +96,7 @@ class Input {
         }
         event.preventDefault();
     }
+
     onKeyUp(event) {
         switch (event.code) {
             case "ArrowLeft":
@@ -108,7 +112,6 @@ class Input {
                 return;
         }
         event.preventDefault();
-        console.log(this);
     }
 }
 
@@ -160,6 +163,66 @@ class Bullet {
     }
 }
 
+class Enemy {
+    /**
+     * @return {number}
+     */
+    static get HALF_SIZE() {
+        return Enemy.SIZE / 2;
+    }
+
+    /**
+     * @return {number}
+     */
+    static get SIZE() {
+        return 64;
+    }
+
+    constructor(image, x, y) {
+        this.image = image;
+        this.pos = {'x': x, 'y': y};
+    }
+
+    move(dx, dy) {
+        this.pos.x += dx;
+        this.pos.y += dy;
+    }
+
+    draw(ctx) {
+        ctx.save();
+        ctx.translate(this.pos.x, this.pos.y);
+
+        // 画像サイズの半分を左と上にずらして基準点の真ん中に来るように調整して描画
+        ctx.drawImage(this.image, -Enemy.HALF_SIZE, -Enemy.HALF_SIZE,
+            Enemy.SIZE, Enemy.SIZE);
+
+        ctx.restore();
+    }
+}
+
+class EnemyManager {
+    constructor() {
+        this.enemyList = [];
+    }
+
+    generateEnemies() {
+        let image = new Image();
+        image.src = "type_a.png";
+        for (let h = 0; h < 5; h++) {
+            for (let w = 0; w < 10; w++) {
+                this.enemyList.push(
+                    new Enemy(image,
+                        50 + Enemy.SIZE * w,
+                        50 + Enemy.SIZE * h));
+            }
+        }
+    }
+
+    draw(ctx) {
+
+    }
+}
+
 window.addEventListener("DOMContentLoaded", function () {
     // 必要な定数、変数を設定しておく
     const canvas = document.getElementById("main");
@@ -176,6 +239,11 @@ window.addEventListener("DOMContentLoaded", function () {
     document.addEventListener("keydown", (evt) => input.onKeyDown(evt));
     document.addEventListener("keyup", (evt) => input.onKeyUp(evt));
 
+    // TODO: 以下の敵表示はデバッグ用なので消すこと
+    // let enemyImage = new Image();
+    // enemyImage.src = "type_a.png";
+    // let enemy = new Enemy(enemyImage, 300, 400);
+
     // メインループ
     let mainLoop = function () {
         // 画面消去
@@ -183,6 +251,9 @@ window.addEventListener("DOMContentLoaded", function () {
 
         // プレイヤーの描画
         player.draw(ctx);
+
+        // TODO: 以下の敵描画はデバッグ用なので消すこと
+        // enemy.draw(ctx);
 
         // 再度この関数を呼び出す予約をする
         setTimeout(mainLoop, SPF);
